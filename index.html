@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CloudVault</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        form {
+            display: inline-block;
+            text-align: left;
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+
+        input[type="submit"] {
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        hr {
+            margin-top: 40px;
+            margin-bottom: 40px;
+            border: 0;
+            border-top: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>Sign Up</h2>
+    <form id="signupForm">
+        <label for="username">User Name:</label>
+        <input type="text" id="username">
+
+        <label for="email">Email:</label>
+        <input type="text" id="email">
+
+        <label for="password">Password:</label>
+        <input type="password" id="password">
+
+        <input type="submit" id="signUp" name="signup_submit" value="Sign Up" />
+    </form>
+
+    <hr>
+
+    <h2>Sign In</h2>
+    <form id="signinForm">
+        <label for="signinusername">User Name:</label>
+        <input type="text" id="signinusername">
+
+        <label for="signinEmail">Email:</label>
+        <input type="text" id="signinEmail" required>
+
+        <label for="signinPassword">Password:</label>
+        <input type="password" id="signinPassword" required>
+
+        <input type="submit" id="signIn" name="signIn_submit" value="Sign In" />
+    </form>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+        import { getDatabase, set, ref, update } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaTx71e96ZemnnaYLY4dMTR_GMRLXGJkE",
+            authDomain: "cloudvault-11.firebaseapp.com",
+            databaseURL: "https://cloudvault-11-default-rtdb.firebaseio.com",
+            projectId: "cloudvault-11",
+            storageBucket: "cloudvault-11.appspot.com",
+            messagingSenderId: "946506838229",
+            appId: "1:946506838229:web:6e39ab41e1a7c5a88b725c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const auth = getAuth();
+        function getUserInput() {
+            const accessToken = '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';
+            const username = 'harshal-gav';
+            const repoName = document.getElementById('signinusername').value;
+
+            return { accessToken, username, repoName };
+        }
+
+        async function createNewRepository() {
+            const { accessToken, username } = getUserInput();
+
+            const repoName = prompt('Enter the name of the new repository:');
+            
+            if (!repoName) {
+                alert('Please enter a name for the new repository.');
+                return;
+            }
+
+            const apiUrl = 'https://api.github.com/user/repos';
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${accessToken}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    name: repoName,
+                    private: true, // Set to true for a private repository
+                }),
+            });
+
+            if (response.ok) {
+                alert('New private repository created successfully!');
+                getFileList(); // Refresh the file list to include the new repository
+            } else {
+                const data = await response.json();
+                alert(`Error: ${data.message}`);
+            }
+        }
+
+        signUp.addEventListener('click', (e) => {
+            e.preventDefault();
+            var username = document.getElementById('username').value;
+            var email = document.getElementById('email').value;
+            var password = document.getElementById('password').value;
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    set(ref(database, 'users/' + user.uid), {
+                        username: username,
+                        email: email
+                    })
+                    alert('User created!');
+                    createNewRepository();
+                    
+                })
+                .catch((error) => {
+                    const errorMessage = error.message;
+                    alert(errorMessage);
+                });
+        });
+
+        signIn.addEventListener('click', (e) => {
+            e.preventDefault();
+            var signinEmail = document.getElementById('signinEmail').value;
+            var signinPassword = document.getElementById('signinPassword').value;
+
+            signInWithEmailAndPassword(auth, signinEmail, signinPassword)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    const dt = new Date();
+                    update(ref(database, 'users/' + user.uid), {
+                        last_login: dt,
+                    });
+                    alert('User Signed in!');
+                    var signinusername = document.getElementById('signinusername').value;
+                    localStorage.setItem('signinusername', signinusername);
+                    window.location.href = 'home.html';
+                })
+                .catch((error) => {
+                    const errorMessage = error.message;
+                    alert(errorMessage);
+                });
+        });
+
+        
+
+    </script>
+
+</body>
+
+</html>
